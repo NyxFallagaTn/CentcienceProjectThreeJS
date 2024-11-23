@@ -1,10 +1,11 @@
+// src/App.js
 import React from 'react';
-import Floor from './Floor'; // Import the Floor component
+import Scene from './components/Scene'; // Import the combined scene component
 
 const App = () => {
   return (
     <div>
-      <Floor /> {/* Render the Floor component */}
+      <Scene /> {/* Render the scene */}
     </div>
   );
 };
