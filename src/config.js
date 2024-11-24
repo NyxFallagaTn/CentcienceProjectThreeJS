@@ -40,7 +40,7 @@ const config = {
 
   // Grid Helper configuration
   gridHelper: {
-    enabled: true,        // Toggle grid visibility (true to show, false to hide)
+    enabled: false,        // Toggle grid visibility (true to show, false to hide)
     size: 100,            // Size of the grid
     divisions: 50,        // Number of divisions in the grid
   },
@@ -51,18 +51,38 @@ const config = {
     color: 0xff0000,      // Red color for the player
     speed: 0.1,           // Movement speed
     friction: 0.5,        // Friction coefficient
+    jumpSpeed: 3,         // Speed when jumping
+    bounceFactor: 1.7,    // Bounce factor when hitting the ground
   },
 
   // Movement configuration (for future extensions like keys, controls, etc.)
   movement: {
     keys: {
-      Z: 'Z',             // Move up
-      S: 'S',             // Move down
+      Z: 'Z',             // Move forward
+      S: 'S',             // Move backward
       Q: 'Q',             // Move left
       D: 'D',             // Move right
-      space: ' ',         // Space for jumping or moving up
-    }
+    },
   },
+
+  // Random Objects configuration
+  randomObjects: {
+    count: 5,                // Number of objects to generate
+    shapes: ['sphere'],         // Shapes to randomly generate
+    messages: [
+      "Explore me!",
+      "Hidden message here",
+      "Click to discover more",
+      "Keep going!",
+    ],                        // Array of hidden messages
+    colorRange: [0x000000, 0xffffff], // Color range for random objects
+    sizeRange: [3, 3],        // Minimum and maximum size for objects
+  },
+
+  // Gravity and boundaries configuration
+  gravity: -0.1,           // Gravity force
+  floorWidth: 100,         // Floor width for boundaries
+  floorHeight: 100,        // Floor height for boundaries
 };
 
 export default config;

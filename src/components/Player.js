@@ -1,32 +1,30 @@
 import * as THREE from 'three';
-import config from '../config'; // Import config
+import config from '../config';
 
-const Player = () => {
+const Player = (camera) => {
   const ballGeometry = new THREE.SphereGeometry(config.player.radius, 32, 32);
   const ballMaterial = new THREE.MeshStandardMaterial({ color: config.player.color });
   const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+  
 
-  // Initial position and velocity
   const position = new THREE.Vector3(0, 1, 0);
   const velocity = new THREE.Vector3(0, 0, 0);
   const acceleration = new THREE.Vector3(0, 0, 0);
   const friction = config.player.friction;
   const speed = config.player.speed;
 
-  // Gravity and jump mechanics
-  const gravity = -0.1;  // Downward force
-  let isJumping = false; // To track if the player is already jumping
-  const jumpSpeed = 3;   // Initial upward speed when jumping
-  const bounceFactor = 1.7; // Bounciness after hitting the ground
-
-  // Get floor space boundaries from config
-  const floorWidth = config.floor.width;  // Defined in config.js
-  const floorHeight = config.floor.height; // Defined in config.js
+  const floorWidth = config.floor.width;
+  const floorHeight = config.floor.height;
 
   ball.position.copy(position);
 
+  const boundingSphere = new THREE.Sphere(ball.position.clone(), config.player.radius);
+
   const keyState = {
-    Z: false, S: false, Q: false, D: false, ' ': false, Control: false,
+    [config.movement.keys.Z]: false,
+    [config.movement.keys.S]: false,
+    [config.movement.keys.Q]: false,
+    [config.movement.keys.D]: false,
   };
 
   const handleKeyDown = (event) => {
@@ -45,39 +43,20 @@ const Player = () => {
 
   const calculateMovement = () => {
     acceleration.set(0, 0, 0);
-    if (keyState.Z) acceleration.z = -speed;
-    if (keyState.S) acceleration.z = speed;
-    if (keyState.Q) acceleration.x = -speed;
-    if (keyState.D) acceleration.x = speed;
 
-    // Jumping effect when spacebar is pressed
-    if (keyState[' ']) {
-      if (!isJumping) {  // Prevent double jumping
-        velocity.y = jumpSpeed;  // Set upward velocity for jumping
-        isJumping = true;
-      }
-    }
+    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).setY(0).normalize();
+    const cameraRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).setY(0).normalize();
 
-    // Apply gravity and simulate mirrored jump and fall
-    if (ball.position.y > 1) {
-      // Ball is going up
-      velocity.y += gravity;  // Gravity pulling it down
-    } else {
-      // Ball hits the ground
-      if (velocity.y < 0) {
-        velocity.y = -velocity.y * bounceFactor;  // Invert velocity with bounce factor
-        if (Math.abs(velocity.y) < 0.1) {
-          velocity.y = 0;  // Stop bouncing when the velocity is small enough
-          isJumping = false;  // Allow jumping again
-        }
-      }
-      ball.position.y = 1;  // Keep the player on the ground level (y = 1)
-    }
+    const moveDirection = new THREE.Vector3(0, 0, 0);
 
-    // Apply horizontal movement (XZ plane)
-    const totalMovement = acceleration.length();
-    if (totalMovement > 0) {
-      acceleration.normalize().multiplyScalar(speed);
+    if (keyState[config.movement.keys.Z]) moveDirection.add(cameraForward);
+    if (keyState[config.movement.keys.S]) moveDirection.sub(cameraForward);
+    if (keyState[config.movement.keys.D]) moveDirection.add(cameraRight);
+    if (keyState[config.movement.keys.Q]) moveDirection.sub(cameraRight);
+
+    if (moveDirection.length() > 0) {
+      moveDirection.normalize();
+      acceleration.copy(moveDirection.multiplyScalar(speed));
     }
   };
 
@@ -87,18 +66,13 @@ const Player = () => {
     velocity.add(acceleration);
     ball.position.add(velocity);
 
-    // Limit the ball's position to stay within the floor space
-    if (ball.position.x < -floorWidth / 2) ball.position.x = -floorWidth / 2;
-    if (ball.position.x > floorWidth / 2) ball.position.x = floorWidth / 2;
+    boundingSphere.center.copy(ball.position);
 
-    if (ball.position.z < -floorHeight / 2) ball.position.z = -floorHeight / 2;
-    if (ball.position.z > floorHeight / 2) ball.position.z = floorHeight / 2;
-
-    // Rotation effect based on movement speed
-    const rotationSpeed = velocity.length() * 0.1;
-    ball.rotation.x += rotationSpeed;
-    ball.rotation.y += rotationSpeed;
-    ball.rotation.z += rotationSpeed;
+    const radius = config.player.radius;
+    if (ball.position.x - radius < -floorWidth / 2) ball.position.x = -floorWidth / 2 + radius;
+    if (ball.position.x + radius > floorWidth / 2) ball.position.x = floorWidth / 2 - radius;
+    if (ball.position.z - radius < -floorHeight / 2) ball.position.z = -floorHeight / 2 + radius;
+    if (ball.position.z + radius > floorHeight / 2) ball.position.z = floorHeight / 2 - radius;
 
     acceleration.set(0, 0, 0);
   };
@@ -106,10 +80,16 @@ const Player = () => {
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
 
-  return { ball, update, cleanup: () => {
-    window.removeEventListener('keydown', handleKeyDown);
-    window.removeEventListener('keyup', handleKeyUp);
-  }};
+  return {
+    ball,
+    boundingSphere,
+    velocity,
+    update,
+    cleanup: () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    },
+  };
 };
 
 export default Player;
