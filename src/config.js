@@ -40,14 +40,14 @@ const config = {
 
   // Grid Helper configuration
   gridHelper: {
-    enabled: false,        // Toggle grid visibility (true to show, false to hide)
+    enabled: true,        // Toggle grid visibility (true to show, false to hide)
     size: 100,            // Size of the grid
     divisions: 50,        // Number of divisions in the grid
   },
 
   // Player configuration
   player: {
-    radius: 1,            // Player radius (since it's a ball)
+    radius: 0.5,            // Player radius (since it's a ball)
     color: 0xff0000,      // Red color for the player
     speed: 0.1,           // Movement speed
     friction: 0.5,        // Friction coefficient

@@ -1,29 +1,24 @@
+// src/components/Scene.js
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three-stdlib';
 import Floor from './Floor';
 import Lights from './Lights';
 import Camera from './Camera';
 import Player from './Player';
 import RandomObject from './RandomObject';
 import createStarField from './Stars';
-import createEarth from './Earth'; // Import de la Terre avec rotation
+import createEarth from './Earth';
 import config from '../config';
 
 const Scene = () => {
   const containerRef = useRef();
 
   useEffect(() => {
+    // Previous scene setup code remains the same...
     const container = containerRef.current;
-
-    // Création de la scène
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); // Fond noir pour une meilleure visibilité des étoiles
-
-    // Création de la caméra
-    const camera = Camera();
-
-    // Création du renderer
+    scene.background = new THREE.Color(0x000000);
+    const { camera, ThirdPersonCamera } = Camera();
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
@@ -33,6 +28,7 @@ const Scene = () => {
       container.appendChild(renderer.domElement);
     }
 
+    // Scene elements setup remains the same...
     const floor = Floor();
     scene.add(floor);
 
@@ -48,31 +44,13 @@ const Scene = () => {
     const starField = createStarField(1000);
     scene.add(starField);
 
-    const earth = createEarth(); 
+    const earth = createEarth();
     scene.add(earth);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.25;
-    controls.screenSpacePanning = false;
-
-    controls.minPolarAngle = 0;
-    controls.maxPolarAngle = Math.PI / 2.2;
-
-    controls.minDistance = 5;
-    controls.maxDistance = 10;
-
-    controls.addEventListener('change', () => {
-      if (camera.position.y < 2) {
-        camera.position.y = 2;
-      }
-      if (camera.position.y > 30) {
-        camera.position.y = 30;
-      }
-    });
-
-    const { ball, boundingSphere,velocity, update, cleanup } = Player(camera);
+    const { ball, boundingSphere, velocity, update, cleanup } = Player(camera);
     scene.add(ball);
+
+    const thirdPersonCamera = new ThirdPersonCamera(camera, ball);
 
     const randomObjects = RandomObject();
     randomObjects.forEach((obj) => {
@@ -81,21 +59,24 @@ const Scene = () => {
       scene.add(obj);
     });
 
-
     const onClick = (event) => {
-      const mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-      );
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(randomObjects);
-      if (intersects.length > 0) {
-        alert(intersects[0].object.userData.message);
+      if (document.pointerLockElement) {
+        // Cast ray from center of screen (where crosshair is)
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    
+        const intersects = raycaster.intersectObjects([floor, ...randomObjects]);
+    
+        if (intersects.length > 0) {
+          const clickedObject = intersects[0].object;
+    
+          // Check if the object has a message
+          if (clickedObject.userData && clickedObject.userData.message) {
+            alert(clickedObject.userData.message);
+          }
+        }
       }
     };
-
-    window.addEventListener('click', onClick);
 
     const onWindowResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -103,22 +84,20 @@ const Scene = () => {
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
 
-    window.addEventListener('resize', onWindowResize, false);
-
-    const updateCameraTarget = () => {
-      controls.target.copy(ball.position);
-      controls.target.y += 1;
-      controls.update();
+    const onContextMenu = (event) => {
+      event.preventDefault();
     };
 
+    window.addEventListener('click', onClick);
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('contextmenu', onContextMenu);
+
+    // Collision detection remains the same...
     const checkCollisions = () => {
       randomObjects.forEach((object) => {
         const objectBoundingSphere = object.userData.boundingSphere;
     
         if (boundingSphere.intersectsSphere(objectBoundingSphere)) {
-          console.log('Collision detected with:', object.userData.message);
-          //object.material.color.set(0xff0000);
-    
           const collisionNormal = new THREE.Vector3()
             .subVectors(boundingSphere.center, objectBoundingSphere.center)
             .normalize();
@@ -140,21 +119,15 @@ const Scene = () => {
         }
       });
     };
-    
-    
 
     const animate = () => {
       requestAnimationFrame(animate);
 
-      controls.update();
-
       update();
-
       checkCollisions();
-
-      updateCameraTarget();
-
+      thirdPersonCamera.update();
       earth.update();
+      starField.update();
 
       renderer.render(scene, camera);
     };
@@ -164,16 +137,15 @@ const Scene = () => {
     return () => {
       window.removeEventListener('resize', onWindowResize);
       window.removeEventListener('click', onClick);
+      window.removeEventListener('contextmenu', onContextMenu);
       cleanup();
+      thirdPersonCamera.dispose();
 
       if (container) {
         container.removeChild(renderer.domElement);
       }
 
-      controls.dispose();
       renderer.dispose();
-
-      // Dispose du champ d'étoiles
       scene.remove(starField);
       starField.geometry.dispose();
       starField.material.dispose();
@@ -201,6 +173,30 @@ const Scene = () => {
       >
         Generate New World
       </button>
+      
+      {/* New Ring Crosshair */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 2,
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          style={{
+            width: '10px',
+            height: '10px',
+            position: 'relative',
+            border: '2px solid rgba(255, 255, 255, 0.8)',
+            borderRadius: '50%',
+            backgroundColor: 'transparent',
+          }}
+        />
+      </div>
+      
       <div 
         ref={containerRef} 
         style={{ 
@@ -208,7 +204,8 @@ const Scene = () => {
           height: '100vh', 
           position: 'fixed',
           top: 0,
-          left: 0
+          left: 0,
+          cursor: 'none' // Hide the cursor completely when in game
         }} 
       />
     </div>

@@ -7,7 +7,7 @@ const Player = (camera) => {
   const ball = new THREE.Mesh(ballGeometry, ballMaterial);
   
 
-  const position = new THREE.Vector3(0, 1, 0);
+  const position = new THREE.Vector3(0, config.player.radius, 0);
   const velocity = new THREE.Vector3(0, 0, 0);
   const acceleration = new THREE.Vector3(0, 0, 0);
   const friction = config.player.friction;
