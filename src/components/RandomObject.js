@@ -5,15 +5,18 @@ const RandomObject = () => {
   const { count, shapes, messages, colorRange, sizeRange } = config.randomObjects;
 
   const objects = [];
+  const schema = { randomObjects: [] }; // Schema to save objects
+
   for (let i = 0; i < count; i++) {
     const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
     const size = Math.random() * (sizeRange[1] - sizeRange[0]) + sizeRange[0];
     const color = Math.random() * (colorRange[1] - colorRange[0]) + colorRange[0];
-    const position = new THREE.Vector3(
-      Math.random() * 100 - 50,
-      size / 2,
-      Math.random() * 100 - 50
-    );
+    const position = {
+      x: Math.random() * 100 - 50,
+      y: size / 2,
+      z: Math.random() * 100 - 50,
+    };
+    const message = messages[Math.floor(Math.random() * messages.length)];
 
     let geometry;
     if (shapeType === 'box') {
@@ -25,14 +28,14 @@ const RandomObject = () => {
     const material = new THREE.MeshStandardMaterial({ color });
     const mesh = new THREE.Mesh(geometry, material);
 
-    mesh.position.copy(position);
-    const boundingSphere = new THREE.Sphere(position.clone(), size / 2);
-    mesh.userData = { message: messages[Math.floor(Math.random() * messages.length)], boundingSphere };
-
+    mesh.position.set(position.x, position.y, position.z);
+    mesh.userData = { message };
     objects.push(mesh);
+
+    schema.randomObjects.push({ shape: shapeType, size, color, position, message });
   }
 
-  return objects;
+  return { objects, schema };
 };
 
 export default RandomObject;

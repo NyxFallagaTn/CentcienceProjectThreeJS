@@ -8,8 +8,13 @@ const createEarth = () => {
 
   // Utiliser un lien CDN pour la texture de la Terre
   const texture = textureLoader.load(
-    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r146/examples/textures/land_ocean_ice_cloud_2048.jpg', // Texture de la Terre
-    () => console.log('Texture de la Terre chargée avec succès'),
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r146/examples/textures/land_ocean_ice_cloud_2048.jpg',
+    (texture) => {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      console.log('Texture de la Terre chargée avec succès');
+    },
     undefined,
     (error) => console.error('Erreur lors du chargement de la texture :', error)
   );

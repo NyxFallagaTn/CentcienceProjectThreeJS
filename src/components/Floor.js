@@ -1,78 +1,104 @@
 // src/components/Floor.js
 import * as THREE from 'three';
-import config from '../config'; // Import de la configuration
+import config from '../config';
 
 const Floor = () => {
-  const { width, height } = config.floor; // Récupération des dimensions du sol depuis la configuration
+  const { width, height } = config.floor;
   const textureLoader = new THREE.TextureLoader();
 
-  // Charger la texture du sol
+  // Load floor texture
   const floorTexture = textureLoader.load(
-    'https://i.ibb.co/7WXw7FD/sol.jpg', // Texture de la Lune (ou autre)
-    () => console.log('Texture du sol chargée avec succès'),
+    'https://i.ibb.co/7WXw7FD/sol.jpg',
+    (texture) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      console.log('Floor texture loaded successfully');
+    },
     undefined,
-    (error) => console.error('Erreur lors du chargement de la texture du sol :', error)
+    (error) => console.error('Error loading floor texture:', error)
   );
 
-  // Charger une texture de mur
-  const wallTexture = textureLoader.load(
-    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r146/examples/textures/brick_diffuse.jpg', // Texture de mur
-    () => console.log('Texture des murs chargée avec succès'),
-    undefined,
-    (error) => console.error('Erreur lors du chargement de la texture des murs :', error)
-  );
+  // Create glass material with realistic properties
+  const glassMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    metalness: 0,
+    roughness: 0,
+    transmission: 0.9, // Transparency level
+    thickness: 0.5, // Glass thickness
+    envMapIntensity: 1,
+    clearcoat: 1,
+    clearcoatRoughness: 0,
+    transparent: true,
+    opacity: 0.3,
+    reflectivity: 0.9,
+    side: THREE.DoubleSide
+  });
 
-  // Créer le sol
+  // Create floor
   const floorGeometry = new THREE.PlaneGeometry(width, height);
   const floorMaterial = new THREE.MeshStandardMaterial({
     map: floorTexture,
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2; // Rotation pour rendre le sol horizontal
+  floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
 
-  // Créer des murs
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    map: wallTexture,
-  });
-
+  // Create glass walls
   const walls = [];
-  const wallHeight = 1; // Hauteur des murs
+  const wallHeight = 4; // Increased height for more dramatic effect
 
-  // Mur arrière
+  // Back wall
   const backWallGeometry = new THREE.PlaneGeometry(width, wallHeight);
-  const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+  const backWall = new THREE.Mesh(backWallGeometry, glassMaterial);
   backWall.position.set(0, wallHeight / 2, -height / 2);
+  backWall.castShadow = true;
+  backWall.receiveShadow = true;
   walls.push(backWall);
 
-  // Mur avant
+  // Front wall
   const frontWallGeometry = new THREE.PlaneGeometry(width, wallHeight);
-  const frontWall = new THREE.Mesh(frontWallGeometry, wallMaterial);
+  const frontWall = new THREE.Mesh(frontWallGeometry, glassMaterial);
   frontWall.position.set(0, wallHeight / 2, height / 2);
-  frontWall.rotation.y = Math.PI; // Rotation pour orienter le mur correctement
+  frontWall.rotation.y = Math.PI;
+  frontWall.castShadow = true;
+  frontWall.receiveShadow = true;
   walls.push(frontWall);
 
-  // Mur gauche
+  // Left wall
   const leftWallGeometry = new THREE.PlaneGeometry(height, wallHeight);
-  const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
+  const leftWall = new THREE.Mesh(leftWallGeometry, glassMaterial);
   leftWall.position.set(-width / 2, wallHeight / 2, 0);
   leftWall.rotation.y = Math.PI / 2;
+  leftWall.castShadow = true;
+  leftWall.receiveShadow = true;
   walls.push(leftWall);
 
-  // Mur droit
+  // Right wall
   const rightWallGeometry = new THREE.PlaneGeometry(height, wallHeight);
-  const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
+  const rightWall = new THREE.Mesh(rightWallGeometry, glassMaterial);
   rightWall.position.set(width / 2, wallHeight / 2, 0);
   rightWall.rotation.y = -Math.PI / 2;
+  rightWall.castShadow = true;
+  rightWall.receiveShadow = true;
   walls.push(rightWall);
 
-  // Retourner le sol et les murs
+  // Optional: Add subtle frame/border for the glass walls
+  walls.forEach(wall => {
+    const frameGeometry = new THREE.EdgesGeometry(wall.geometry);
+    const frameMaterial = new THREE.LineBasicMaterial({ 
+      color: 0x808080,
+      linewidth: 1
+    });
+    const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
+    wall.add(frame);
+  });
+
+  // Create group and add all elements
   const group = new THREE.Group();
   group.add(floor);
-  walls.forEach((wall) => {
-    wall.receiveShadow = true;
-    group.add(wall);
-  });
+  walls.forEach(wall => group.add(wall));
 
   return group;
 };

@@ -21,6 +21,9 @@ class ThirdPersonCamera {
     this.lastMouseX = window.innerWidth / 2;
     this.lastMouseY = window.innerHeight / 2;
     
+    // Default position if target is not ready
+    this.defaultPosition = new THREE.Vector3(0, this.height, this.distance);
+    
     // Bind event handlers
     this.handleMouseMove = this.handleMouseMove.bind(this);
     
@@ -59,13 +62,20 @@ class ThirdPersonCamera {
       Math.cos(this.currentRotation) * this.distance
     );
     
-    // Update camera position and look target
-    this.camera.position.copy(this.target.position).add(offset);
-    this.camera.lookAt(
-      this.target.position.x,
-      this.target.position.y + 1, // Look slightly above player
-      this.target.position.z
-    );
+    // Check if target and its position are available
+    if (this.target && this.target.position) {
+      // Update camera position and look target
+      this.camera.position.copy(this.target.position).add(offset);
+      this.camera.lookAt(
+        this.target.position.x,
+        this.target.position.y + 1, // Look slightly above player
+        this.target.position.z
+      );
+    } else {
+      // Use default position if target is not ready
+      this.camera.position.copy(this.defaultPosition);
+      this.camera.lookAt(0, 0, 0);
+    }
   }
   
   dispose() {

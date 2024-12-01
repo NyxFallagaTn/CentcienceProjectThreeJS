@@ -40,7 +40,7 @@ const config = {
 
   // Grid Helper configuration
   gridHelper: {
-    enabled: true,        // Toggle grid visibility (true to show, false to hide)
+    enabled: false,        // Toggle grid visibility (true to show, false to hide)
     size: 100,            // Size of the grid
     divisions: 50,        // Number of divisions in the grid
   },
@@ -58,10 +58,10 @@ const config = {
   // Movement configuration (for future extensions like keys, controls, etc.)
   movement: {
     keys: {
-      Z: 'Z',             // Move forward
-      S: 'S',             // Move backward
-      Q: 'Q',             // Move left
-      D: 'D',             // Move right
+      W: 'W', // Move forward
+      S: 'S', // Move backward
+      A: 'A', // Move left
+      D: 'D', // Move right
     },
   },
 
@@ -75,8 +75,8 @@ const config = {
       "Click to discover more",
       "Keep going!",
     ],                        // Array of hidden messages
-    colorRange: [0x000000, 0xffffff], // Color range for random objects
-    sizeRange: [3, 3],        // Minimum and maximum size for objects
+    colorRange: [0x000000, 0x000000], // Color range for random objects
+    sizeRange: [2, 2],        // Minimum and maximum size for objects
   },
 
   // Gravity and boundaries configuration
